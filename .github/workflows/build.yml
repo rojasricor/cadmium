@@ -1,0 +1,33 @@
+name: Build cadmium images
+on: [push, workflow_dispatch]
+jobs:
+
+  build-arch-arm-64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: set up environment
+        run: |
+          cd $GITHUB_WORKSPACE
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu/ lunar main restricted' | sudo tee -a /etc/apt/sources.list
+          sudo apt update
+          sudo apt install -y libunwind-dev
+          sudo apt build-dep linux
+          sudo apt install arch-install-scripts gcc-arm-linux-gnueabihf libarchive-tools curl wget f2fs-tools cgpt vboot-utils libncurses-dev gawk flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf qemu-user-static gcc-aarch64-linux-gnu debootstrap binutils-aarch64-linux-gnu git u-boot-tools binfmt-support lz4 
+          
+      - name: remove existing config
+        run: |
+          rm config
+          
+      - name: build arm64-arch
+        run: |
+          ls
+          cp cadmium-configs/config-arm64-arch config
+          sudo ./build-all arm64-arch.img 10G
+          gzip arm64-arch.img
+          chmod 666 arm64-arch.img.gz
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          name: arm64-arch
+          path: arm64-arch.img.gz
